@@ -2,3 +2,6 @@ data_phase1
 logs
 weight
 __pycache__
+.idea
+
+**/.DS_Store
