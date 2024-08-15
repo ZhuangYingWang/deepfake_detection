@@ -36,7 +36,7 @@ for img_name in os.listdir(test_dir):
 
         with torch.no_grad():
             outputs = model(img)
-            probabilities = torch.nn.functional.softmax(outputs, dim=1)  # 应用 softmax 函数
+            probabilities = torch.nn.functional.softmax(outputs, dim=1)  # 应用 softmax 函数ex
             _, preds = torch.max(probabilities, 1)
             score = probabilities[0][1]
 

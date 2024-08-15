@@ -114,7 +114,6 @@ def train_model(args: argparse.Namespace, dataloaders, dataset_sizes, model, cri
                 )
                 logger.info(
                     f"Epoch {epoch + 1} | Step {step:>{print_control}d}/{train_total_step} --- Use {duration:0.2f}s, over this epoch at {over} | loss = {loss.item():0.3e}")
-
         scheduler.step()
         train_epoch_loss = train_loss / dataset_sizes["train"]
         train_epoch_acc = train_corrects / dataset_sizes["train"]
@@ -152,12 +151,13 @@ def train_model(args: argparse.Namespace, dataloaders, dataset_sizes, model, cri
 
         val_epoch_loss = val_loss / dataset_sizes["val"]
         val_epoch_acc = val_corrects / dataset_sizes["val"]
-        val_auc = calculate_auc(model, dataloaders["val"])
+        val_auc = calculate_auc(args, model, dataloaders["val"])
         logger.info(
             "Val Loss: {:.4f} Acc: {:.4f} Auc: {:.4f}% | Use {:.2f}s".format(
                 val_epoch_loss, val_epoch_acc * 100, val_auc, time.time() - start_time
             )
-        )
+        )   
+       
 
         # Save the model if it has the best accuracy on validation set
         if val_epoch_acc > best_acc:
@@ -169,7 +169,6 @@ def train_model(args: argparse.Namespace, dataloaders, dataset_sizes, model, cri
             weight_path = os.path.join(weight_dir, f"{best_acc:.4f}_epoch{epoch}.pt")
             logger.info(f"Save model {weight_path}")
             torch.save(model.state_dict(), weight_path)
-
     time_elapsed = time.time() - since
     logger.info(
         "Training complete in {:.0f}m {:.0f}s".format(
