@@ -29,7 +29,6 @@ def plot_curves(train_accs, val_accs, train_losses, val_losses):
 
     plt.subplot(1, 2, 2)
     plt.plot(epochs, train_losses, 'bo-', label='Training Loss')
-    plt.plot(epochs, val_losses, 'ro-', label='Validation Loss')
     plt.title('Training and Validation Loss')
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
@@ -107,7 +106,7 @@ def train_model(args: argparse.Namespace, dataloaders, dataset_sizes, model, cri
             loss_log.append(loss.item())
 
             step += 1
-            if step % args.prin == 0 or step < 10:
+            if step % args.print_step == 0 or step < 10:
                 duration = time.time() - start_time
                 over = time.strftime(
                     "%H:%M:%S",
@@ -164,7 +163,10 @@ def train_model(args: argparse.Namespace, dataloaders, dataset_sizes, model, cri
         if val_epoch_acc > best_acc:
             best_acc = val_epoch_acc
             best_model_wts = copy.deepcopy(model.state_dict())
-            weight_path = f"/home/dell/桌面/kaggle/deepfake_detection/weight/{best_acc:.4f}_epoch{epoch}.pt"
+            weight_dir = "weight2.0"
+            if not os.path.exists(weight_dir):
+                os.makedirs(weight_dir)
+            weight_path = os.path.join(weight_dir, f"{best_acc:.4f}_epoch{epoch}.pt")
             logger.info(f"Save model {weight_path}")
             torch.save(model.state_dict(), weight_path)
 

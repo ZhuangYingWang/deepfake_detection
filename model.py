@@ -13,12 +13,14 @@ def get_model(args: argparse.Namespace):
     criterion = nn.CrossEntropyLoss()
     optimizer_ft = torch.optim.Adam(net.parameters(), lr=args.learning_rate)
     exp_lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer_ft, step_size=7, gamma=0.1)
+    epoch = args.epoch
 
     model_dict = {
-        "net": net,
+        "model": net,
         "criterion": criterion,
-        "optimizer_ft": optimizer_ft,
-        "exp_lr_scheduler": exp_lr_scheduler
+        "optimizer": optimizer_ft,
+        "scheduler": exp_lr_scheduler,
+        "num_epochs": epoch
     }
 
     return model_dict

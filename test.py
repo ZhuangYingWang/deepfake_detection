@@ -24,7 +24,7 @@ data_transform = transforms.Compose([
     transforms.Normalize(mean, std),
 ])
 
-test_dir = "/home/dell/桌面/test/mini_test"
+test_dir = "/home/dell/桌面/kaggle/deepfake_detection/phase2/testset1_seen"
 
 predictions = []
 

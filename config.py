@@ -14,7 +14,7 @@ def get_config() -> argparse.Namespace:
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # data
-    parser.add_argument("--dataset", type=str, default="dataset",
+    parser.add_argument("--dataset", type=str, default="data_phase1/phase1",
                         help="dataset dir path")
 
     # device
@@ -26,7 +26,7 @@ def get_config() -> argparse.Namespace:
                         help="load pretrain model name")
     parser.add_argument("--learning_rate", type=float, default=0.0005,
                         help="train learning rate")
-    parser.add_argument("--batch_size", type=int, default="1024",
+    parser.add_argument("--batch_size", type=int, default="32",
                         help="train batch size")
     parser.add_argument("--epoch", type=int, default="100",
                         help="train epoch number")
@@ -47,9 +47,7 @@ def get_config() -> argparse.Namespace:
 
     # create log dir
     if not os.path.exists(args.log_dir):
-        os.mkdir(args.log_dir)
-    if not os.path.exists(args.log_dir):
-        os.mkdir(args.log_dir)
+        os.mkdir(args.log_dir, exist_ok=True)
     print("Log dir: ", args.log_dir)
 
     # create logger
