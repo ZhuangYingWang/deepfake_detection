@@ -153,7 +153,7 @@ def train_model(args: argparse.Namespace, dataloaders, dataset_sizes, model, cri
         val_epoch_acc = val_corrects / dataset_sizes["val"]
         val_auc = calculate_auc(args, model, dataloaders["val"])
         logger.info(
-            "Val Loss: {:.4f} Acc: {:.4f} Auc: {:.4f}% | Use {:.2f}s".format(
+            "Val Loss: {:.4f} Acc: {:.4f}% Auc: {:.4f} | Use {:.2f}s".format(
                 val_epoch_loss, val_epoch_acc * 100, val_auc, time.time() - start_time
             )
         )   
