@@ -10,7 +10,7 @@ def get_train_data(args: argparse.Namespace) -> Tuple[Dict[str, DataLoader], Dic
     std = [0.229, 0.224, 0.225]
 
     common_transform = transforms.Compose([
-        transforms.Resize((128, 128)), 
+        transforms.Resize((256, 256)), 
         transforms.ToTensor(), 
         transforms.Normalize(mean, std)  
     ])

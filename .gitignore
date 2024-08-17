@@ -5,8 +5,15 @@ log
 logs
 weight
 weight2.0
+weight3.0
+best_log
+best_weight
 __pycache__
 .idea
 prediction1.0.csv
+prediction.txt
+test_val.py
+data_preprocessing.py
+dataset.py
 
 **/.DS_Store

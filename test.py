@@ -1,5 +1,4 @@
 import os
-
 import torch
 from PIL import Image
 from efficientnet_pytorch import EfficientNet
@@ -10,8 +9,8 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # 加载训练好的模型
 model = EfficientNet.from_name("efficientnet-b7").to(device)
 model._fc.out_features = 2
-model_state_dict = torch.load("/home/dell/桌面/kaggle/deepfake_detection/weight/0.8326_epoch10.pt", map_location=device,
-                              weights_only=True)
+model_state_dict = torch.load("weight2.0/0.8501_epoch3.pt", map_location=device,
+                                weights_only=True)
 model.load_state_dict(model_state_dict)
 model.eval()  # 设置为评估模式
 
@@ -29,7 +28,7 @@ test_dir = "/home/dell/桌面/kaggle/deepfake_detection/phase2/testset1_seen"
 predictions = []
 
 for img_name in os.listdir(test_dir):
-    if img_name.lower().endswith((".jpg", ".png")):
+    if img_name.lower().endswith((".jpg")):
         img_path = os.path.join(test_dir, img_name)
         img = Image.open(img_path).convert("RGB")
         img = data_transform(img).unsqueeze(0).to(device)
@@ -38,7 +37,7 @@ for img_name in os.listdir(test_dir):
             outputs = model(img)
             probabilities = torch.nn.functional.softmax(outputs, dim=1)  # 应用 softmax 函数ex
             _, preds = torch.max(probabilities, 1)
-            score = probabilities[0][1]
+            score = probabilities[0][0]
 
         predictions.append(f"{img_name},{score.item()}")
 

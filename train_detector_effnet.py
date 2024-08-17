@@ -9,7 +9,8 @@ import torch
 from sklearn.metrics import roc_auc_score
 
 from config import get_config
-from dataset import get_train_data
+#from dataset import get_train_data
+from dataset_augmentation import get_train_data
 from model import get_model
 
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:50'
@@ -163,7 +164,7 @@ def train_model(args: argparse.Namespace, dataloaders, dataset_sizes, model, cri
         if val_epoch_acc > best_acc:
             best_acc = val_epoch_acc
             best_model_wts = copy.deepcopy(model.state_dict())
-            weight_dir = "weight2.0"
+            weight_dir = "weight3.0"
             if not os.path.exists(weight_dir):
                 os.makedirs(weight_dir)
             weight_path = os.path.join(weight_dir, f"{best_acc:.4f}_epoch{epoch}.pt")
