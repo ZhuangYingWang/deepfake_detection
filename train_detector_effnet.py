@@ -9,7 +9,8 @@ import torch
 from sklearn.metrics import roc_auc_score
 
 from config import get_config
-from dataset import get_train_data
+#from dataset import get_train_data
+from dataset_augmentation import get_train_data
 from model import get_model
 
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:50'
@@ -29,7 +30,6 @@ def plot_curves(train_accs, val_accs, train_losses, val_losses):
 
     plt.subplot(1, 2, 2)
     plt.plot(epochs, train_losses, 'bo-', label='Training Loss')
-    plt.plot(epochs, val_losses, 'ro-', label='Validation Loss')
     plt.title('Training and Validation Loss')
     plt.xlabel('Epoch')
     plt.ylabel('Loss')
@@ -107,7 +107,7 @@ def train_model(args: argparse.Namespace, dataloaders, dataset_sizes, model, cri
             loss_log.append(loss.item())
 
             step += 1
-            if step % args.prin == 0 or step < 10:
+            if step % args.print_step == 0 or step < 10:
                 duration = time.time() - start_time
                 over = time.strftime(
                     "%H:%M:%S",
@@ -115,7 +115,6 @@ def train_model(args: argparse.Namespace, dataloaders, dataset_sizes, model, cri
                 )
                 logger.info(
                     f"Epoch {epoch + 1} | Step {step:>{print_control}d}/{train_total_step} --- Use {duration:0.2f}s, over this epoch at {over} | loss = {loss.item():0.3e}")
-
         scheduler.step()
         train_epoch_loss = train_loss / dataset_sizes["train"]
         train_epoch_acc = train_corrects / dataset_sizes["train"]
@@ -153,21 +152,24 @@ def train_model(args: argparse.Namespace, dataloaders, dataset_sizes, model, cri
 
         val_epoch_loss = val_loss / dataset_sizes["val"]
         val_epoch_acc = val_corrects / dataset_sizes["val"]
-        val_auc = calculate_auc(model, dataloaders["val"])
+        val_auc = calculate_auc(args, model, dataloaders["val"])
         logger.info(
-            "Val Loss: {:.4f} Acc: {:.4f} Auc: {:.4f}% | Use {:.2f}s".format(
+            "Val Loss: {:.4f} Acc: {:.4f}% Auc: {:.4f} | Use {:.2f}s".format(
                 val_epoch_loss, val_epoch_acc * 100, val_auc, time.time() - start_time
             )
-        )
+        )   
+       
 
         # Save the model if it has the best accuracy on validation set
         if val_epoch_acc > best_acc:
             best_acc = val_epoch_acc
             best_model_wts = copy.deepcopy(model.state_dict())
-            weight_path = f"/home/dell/桌面/kaggle/deepfake_detection/weight/{best_acc:.4f}_epoch{epoch}.pt"
+            weight_dir = "weight3.0"
+            if not os.path.exists(weight_dir):
+                os.makedirs(weight_dir)
+            weight_path = os.path.join(weight_dir, f"{best_acc:.4f}_epoch{epoch}.pt")
             logger.info(f"Save model {weight_path}")
             torch.save(model.state_dict(), weight_path)
-
     time_elapsed = time.time() - since
     logger.info(
         "Training complete in {:.0f}m {:.0f}s".format(
