@@ -3,7 +3,7 @@ import os
 import shutil
 
 # 定义基础目录
-base_dir = "/home/dell/桌面/kaggle/deepfake_detection/data_phase1/phase1"
+base_dir = "data_phase1/phase1"
 
 
 # 定义生成目录的函数
@@ -24,6 +24,8 @@ def process_dataset(label_path, image_dir, class_dirs):
         for line in file:
             if line.strip():  # 确保不处理空行
                 image_label = line.strip().split(',')
+                if image_label[0] == "img_name":
+                    continue
                 if len(image_label) == 2:
                     image_name, target = image_label[0], int(image_label[1])
                     target_dir = class_dirs['real'] if target == 0 else class_dirs['fake']

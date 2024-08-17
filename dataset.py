@@ -27,7 +27,7 @@ def get_train_data(args: argparse.Namespace) -> Tuple[Dict[str, DataLoader], Dic
         # 随机擦除，例如擦除面积为20%的区域
         transforms.RandomErasing(p=0.5, scale=(0.02, 0.2), ratio=(0.3, 3.3)),
         # 调整图像大小
-        transforms.Resize((128, 128)),
+        transforms.Resize((args.img_width, args.img_height)),
         # 转换为张量
         transforms.ToTensor(),
         # 标准化

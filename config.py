@@ -28,6 +28,10 @@ def get_config() -> argparse.Namespace:
                         help="cpu or cuda")
 
     # train
+    parser.add_argument("--img_width", type=int, default=128,
+                        help="train image resize width")
+    parser.add_argument("--img_height", type=int, default=128,
+                        help="train image resize height")
     parser.add_argument("--model_name", type=str, default="efficientnet-b7",
                         help="load pretrain model name")
     parser.add_argument("--learning_rate", type=float, default=0.0005,
