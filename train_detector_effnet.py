@@ -9,8 +9,7 @@ import torch
 from sklearn.metrics import roc_auc_score
 
 from config import get_config
-#from dataset import get_train_data
-from dataset_augmentation import get_train_data
+from dataset import get_augmentation_train_data
 from model import get_model
 
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:50'
@@ -97,17 +96,19 @@ def train_model(args: argparse.Namespace, dataloaders, dataset_sizes, model, cri
 
             optimizer.zero_grad()
             outputs = model(inputs)
-            _, preds = torch.max(outputs, 1)
+            predict_labels = torch.argmax(torch.softmax(outputs, dim=1), dim=1)
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
 
             train_loss += loss.item() * inputs.size(0)
-            train_corrects += torch.sum(preds == labels.data).item()
+            train_corrects += torch.sum(predict_labels == labels.data).item()
             loss_log.append(loss.item())
 
             step += 1
             if step % args.print_step == 0 or step < 10:
+                current_lr = optimizer.param_groups[0]['lr']
+                logger.info(f"Current learning rate: {current_lr:.6f}")
                 duration = time.time() - start_time
                 over = time.strftime(
                     "%H:%M:%S",
@@ -115,7 +116,7 @@ def train_model(args: argparse.Namespace, dataloaders, dataset_sizes, model, cri
                 )
                 logger.info(
                     f"Epoch {epoch + 1} | Step {step:>{print_control}d}/{train_total_step} --- Use {duration:0.2f}s, over this epoch at {over} | loss = {loss.item():0.3e}")
-        scheduler.step()
+            scheduler.step()
         train_epoch_loss = train_loss / dataset_sizes["train"]
         train_epoch_acc = train_corrects / dataset_sizes["train"]
         # np.save(f"logs/epoch_{epoch + 1}_loss.npy", np.array(loss_log))
@@ -144,11 +145,11 @@ def train_model(args: argparse.Namespace, dataloaders, dataset_sizes, model, cri
                 labels = labels.to(device)
 
                 outputs = model(inputs)
-                _, preds = torch.max(outputs, 1)
+                predict_labels = torch.argmax(torch.softmax(outputs, dim=1), dim=1)
                 loss = criterion(outputs, labels)
 
                 val_loss += loss.item() * inputs.size(0)
-                val_corrects += torch.sum(preds == labels.data).item()
+                val_corrects += torch.sum(predict_labels == labels.data).item()
 
         val_epoch_loss = val_loss / dataset_sizes["val"]
         val_epoch_acc = val_corrects / dataset_sizes["val"]
@@ -157,8 +158,7 @@ def train_model(args: argparse.Namespace, dataloaders, dataset_sizes, model, cri
             "Val Loss: {:.4f} Acc: {:.4f}% Auc: {:.4f} | Use {:.2f}s".format(
                 val_epoch_loss, val_epoch_acc * 100, val_auc, time.time() - start_time
             )
-        )   
-       
+        )
 
         # Save the model if it has the best accuracy on validation set
         if val_epoch_acc > best_acc:
@@ -184,7 +184,7 @@ def train_model(args: argparse.Namespace, dataloaders, dataset_sizes, model, cri
 
 def main(args: argparse.Namespace):
     # get train data
-    dataloaders, dataset_sizes = get_train_data(args)
+    dataloaders, dataset_sizes = get_augmentation_train_data(args)
     # get model
     model_dict = get_model(args)
     # train model

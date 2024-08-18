@@ -22,6 +22,8 @@ def get_config() -> argparse.Namespace:
     # data
     parser.add_argument("--dataset", type=str, default="data_phase1/phase1",
                         help="dataset dir path")
+    parser.add_argument("--num_workers", type=int, default=8,
+                        help="load dataset number of workers")
 
     # device
     parser.add_argument("--device", type=str, default=device,
@@ -34,11 +36,13 @@ def get_config() -> argparse.Namespace:
                         help="train image resize height")
     parser.add_argument("--model_name", type=str, default="efficientnet-b7",
                         help="load pretrain model name")
-    parser.add_argument("--learning_rate", type=float, default=0.0005,
-                        help="train learning rate")
+    parser.add_argument("--init_lr", type=float, default=5e-4,
+                        help="train init learning rate")
+    parser.add_argument("--final_lr", type=float, default=5e-5,
+                        help="train final learning rate")
     parser.add_argument("--batch_size", type=int, default="16",
                         help="train batch size")
-    parser.add_argument("--epoch", type=int, default="100",
+    parser.add_argument("--epoch", type=int, default=5,
                         help="train epoch number")
     parser.add_argument("--output_dim", type=int, default=2,
                         help="model output dim")
