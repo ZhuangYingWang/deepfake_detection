@@ -9,7 +9,7 @@ from model import get_model
 
 
 def test(args: argparse.Namespace):
-    model_dict = get_model(args, "weight2.0/0.8501_epoch3.pt")
+    model_dict = get_model(args, "weight3.0/0.5991_epoch0.pt")
     model = model_dict["model"]
 
     model.eval()
@@ -19,15 +19,15 @@ def test(args: argparse.Namespace):
     predictions = []
 
     with torch.no_grad():
-        for inputs, labels in test_loader:
+        for inputs, img_paths in test_loader:
             inputs = inputs.to(args.device)
             outputs = model(inputs)
             probabilities = torch.nn.functional.softmax(outputs, dim=1)
             scores = probabilities[:, 0].cpu().numpy()
 
-            for i, img_name in enumerate(test_loader.dataset.imgs):
-                img_filename = os.path.basename(img_name[0])
-                predictions.append(f"{img_filename},{scores[i]}")
+            for img_path, score in zip(img_paths, scores):
+                img_filename = os.path.basename(img_path)
+                predictions.append(f"{img_filename},{score}")
 
     with open("prediction.txt", "w") as f:
         for pred in predictions:

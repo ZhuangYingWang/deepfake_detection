@@ -1,8 +1,8 @@
 import argparse
 import os
 from typing import Dict, Tuple
-
-from torch.utils.data import DataLoader
+from PIL import Image
+from torch.utils.data import DataLoader, Dataset
 from torchvision import datasets, transforms
 
 mean = [0.485, 0.456, 0.406]
@@ -108,22 +108,33 @@ def get_augmentation_train_data(args: argparse.Namespace) -> Tuple[Dict[str, Dat
     return dataloaders, dataset_sizes
 
 
-def get_test_data(args: argparse.Namespace) -> Tuple[DataLoader, int]:
+class CustomImageDataset(Dataset):
+    def __init__(self, root_dir, transform=None):
+        self.root_dir = root_dir
+        self.transform = transform
+        self.image_paths = [os.path.join(root_dir, fname) for fname in os.listdir(root_dir) if
+                            fname.lower().endswith(('.png', '.jpg', '.jpeg'))]
+
+    def __len__(self):
+        return len(self.image_paths)
+
+    def __getitem__(self, idx):
+        img_path = self.image_paths[idx]
+        image = Image.open(img_path).convert("RGB")
+        if self.transform:
+            image = self.transform(image)
+        return image, img_path
+
+
+def get_test_data(args: argparse.Namespace):
     data_transform = transforms.Compose([
         transforms.Resize((args.img_width, args.img_height)),
         transforms.ToTensor(),
-        transforms.Normalize(mean, std),
+        transforms.Normalize(mean=mean, std=std),
     ])
 
-    test_dataset = datasets.ImageFolder(
-        root="phase2/testset1_seen",
-        transform=data_transform
-    )
+    test_dataset = CustomImageDataset(root_dir="phase2/testset1_seen", transform=data_transform)
 
-    test_loader = DataLoader(
-        test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers
-    )
+    test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False, num_workers=args.num_workers)
 
-    dataset_size = len(test_dataset)
-
-    return test_loader, dataset_size
+    return test_loader, len(test_dataset)
