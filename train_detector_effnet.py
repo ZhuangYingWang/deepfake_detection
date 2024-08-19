@@ -10,7 +10,8 @@ from sklearn.metrics import roc_auc_score
 
 from config import get_config
 from dataset import get_augmentation_train_data
-from model import get_model
+from model import get_xception_model
+from utils.metric_util import calculate_auc
 
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:50'
 
@@ -39,7 +40,7 @@ def plot_curves(train_accs, val_accs, train_losses, val_losses):
 
 
 # 在验证阶段添加计算AUC的代码
-def calculate_auc(args: argparse.Namespace, model, dataloader):
+def calculate_auc_val(args: argparse.Namespace, model, dataloader):
     device = args.device
     model.eval()
     y_true = []
@@ -60,7 +61,8 @@ def calculate_auc(args: argparse.Namespace, model, dataloader):
     return auc_score
 
 
-def train_model(args: argparse.Namespace, dataloaders, dataset_sizes, model, criterion, optimizer, scheduler,
+def train_model(args: argparse.Namespace, dataloaders, dataset_sizes, class_to_idx, model, criterion, optimizer,
+                scheduler,
                 num_epochs):
     device = args.device
     logger = args.logger
@@ -72,9 +74,11 @@ def train_model(args: argparse.Namespace, dataloaders, dataset_sizes, model, cri
     val_accs = []
     train_losses = []
     val_losses = []
+    train_fake_id = class_to_idx["train"]["fake"]
+    train_real_id = class_to_idx["train"]["real"]
 
     for epoch in range(num_epochs):
-        logger.info("Epoch {}/{}".format(epoch, num_epochs - 1))
+        logger.info("Epoch {}/{}".format(epoch + 1, num_epochs))
         logger.info("-" * 10)
 
         # Training phase
@@ -82,6 +86,13 @@ def train_model(args: argparse.Namespace, dataloaders, dataset_sizes, model, cri
         torch.cuda.empty_cache()  # 及时清理内存
         train_loss = 0.0
         train_corrects = 0.0
+        train_predict_fake_count = 0
+        train_predict_real_count = 0
+        train_label_fake_count = 0
+        train_label_real_count = 0
+        train_predict_prob = []
+        train_label = []
+
         # log
         train_total_step = len(dataloaders["train"])
         print_control = len(str(train_total_step))
@@ -96,13 +107,26 @@ def train_model(args: argparse.Namespace, dataloaders, dataset_sizes, model, cri
 
             optimizer.zero_grad()
             outputs = model(inputs)
-            predict_labels = torch.argmax(torch.softmax(outputs, dim=1), dim=1)
+            softmax_output = torch.softmax(outputs, dim=1)
+            predict_labels = torch.argmax(softmax_output, dim=1)
             loss = criterion(outputs, labels)
             loss.backward()
             optimizer.step()
 
+            # for auc
+            train_label.append(labels.cpu().detach().numpy())
+            train_predict_prob.append(softmax_output.cpu().detach().numpy()[:, train_fake_id])
+
             train_loss += loss.item() * inputs.size(0)
+
             train_corrects += torch.sum(predict_labels == labels.data).item()
+            train_label_fake_count += torch.sum(labels.data == train_fake_id).item()
+            train_predict_fake_count += torch.sum(
+                (predict_labels == train_fake_id) & (labels.data == train_fake_id)).item()
+            train_label_real_count += torch.sum(labels.data == train_real_id).item()
+            train_predict_real_count += torch.sum(
+                (predict_labels == train_real_id) & (labels.data == train_real_id)).item()
+
             loss_log.append(loss.item())
 
             step += 1
@@ -117,8 +141,15 @@ def train_model(args: argparse.Namespace, dataloaders, dataset_sizes, model, cri
                 logger.info(
                     f"Epoch {epoch + 1} | Step {step:>{print_control}d}/{train_total_step} --- Use {duration:0.2f}s, over this epoch at {over} | loss = {loss.item():0.3e}")
             scheduler.step()
+
+        # summary epoch
         train_epoch_loss = train_loss / dataset_sizes["train"]
         train_epoch_acc = train_corrects / dataset_sizes["train"]
+
+        train_label = np.concatenate(train_label)
+        train_predict_prob = np.concatenate(train_predict_prob)
+        train_auc_score = calculate_auc(train_label, train_predict_prob, train_fake_id)
+
         # np.save(f"logs/epoch_{epoch + 1}_loss.npy", np.array(loss_log))
         # plt.plot([i for i in range(len(loss_log))], loss_log)
         # plt.xlabel("Step")
@@ -126,8 +157,10 @@ def train_model(args: argparse.Namespace, dataloaders, dataset_sizes, model, cri
         # plt.savefig(f"logs/epoch_{epoch + 1}_loss.jpg")
         # plt.cla()
         logger.info(
-            "Train Loss: {:.4f} Acc: {:.4f}%".format(
-                train_epoch_loss, train_epoch_acc * 100
+            "Train Loss: {:.4f} Auc: {:.4f} Acc: {:.4f}% | Fake Acc: {:4f}% | Real Acc: {:.4f}%".format(
+                train_epoch_loss, train_auc_score, train_epoch_acc * 100,
+                                                   train_predict_fake_count / train_label_fake_count * 100,
+                                                   train_predict_real_count / train_label_real_count * 100
             )
         )
 
@@ -135,6 +168,14 @@ def train_model(args: argparse.Namespace, dataloaders, dataset_sizes, model, cri
         model.eval()
         val_loss = 0.0
         val_corrects = 0.0
+        val_predict_fake_count = 0
+        val_predict_real_count = 0
+        val_label_fake_count = 0
+        val_label_real_count = 0
+        val_fake_id = class_to_idx["val"]["fake"]
+        val_real_id = class_to_idx["val"]["real"]
+        val_label = []
+        val_predict_prob = []
 
         logger.info("Test...")
         start_time = time.time()
@@ -145,18 +186,34 @@ def train_model(args: argparse.Namespace, dataloaders, dataset_sizes, model, cri
                 labels = labels.to(device)
 
                 outputs = model(inputs)
+                softmax_output = torch.softmax(outputs, dim=1)
                 predict_labels = torch.argmax(torch.softmax(outputs, dim=1), dim=1)
                 loss = criterion(outputs, labels)
 
+                # for auc
+                val_label.append(labels.cpu().detach().numpy())
+                val_predict_prob.append(softmax_output.cpu().detach().numpy()[:, train_fake_id])
+
                 val_loss += loss.item() * inputs.size(0)
                 val_corrects += torch.sum(predict_labels == labels.data).item()
+                val_label_fake_count += torch.sum(labels.data == val_fake_id).item()
+                val_predict_fake_count += torch.sum(
+                    (predict_labels == val_fake_id) & (labels.data == val_fake_id)).item()
+                val_label_real_count += torch.sum(labels.data == val_real_id).item()
+                val_predict_real_count += torch.sum(
+                    (predict_labels == val_real_id) & (labels.data == val_real_id)).item()
 
         val_epoch_loss = val_loss / dataset_sizes["val"]
         val_epoch_acc = val_corrects / dataset_sizes["val"]
-        val_auc = calculate_auc(args, model, dataloaders["val"])
+        # val_auc = calculate_auc_val(args, model, dataloaders["val"])
+        val_label = np.concatenate(val_label)
+        val_predict_prob = np.concatenate(val_predict_prob)
+        val_auc_score = calculate_auc(val_label, val_predict_prob, val_fake_id)
+        logger.info(f"AUC -> {val_auc_score}")
         logger.info(
-            "Val Loss: {:.4f} Acc: {:.4f}% Auc: {:.4f} | Use {:.2f}s".format(
-                val_epoch_loss, val_epoch_acc * 100, val_auc, time.time() - start_time
+            "Val Loss: {:.4f} Acc: {:.4f}% Auc: {:.4f} | Fake Acc: {:4f}% | Real Acc: {:.4f}% | Use {:.2f}s".format(
+                val_epoch_loss, val_epoch_acc * 100, val_auc_score, val_predict_fake_count / val_label_fake_count * 100,
+                                val_predict_real_count / val_label_real_count * 100, time.time() - start_time
             )
         )
 
@@ -183,11 +240,11 @@ def train_model(args: argparse.Namespace, dataloaders, dataset_sizes, model, cri
 
 def main(args: argparse.Namespace):
     # get train data
-    dataloaders, dataset_sizes = get_augmentation_train_data(args)
+    dataloaders, dataset_sizes, class_to_idx = get_augmentation_train_data(args)
     # get model
-    model_dict = get_model(args)
+    model_dict = get_xception_model(args)
     # train model
-    model_ft = train_model(args, dataloaders, dataset_sizes, **model_dict)
+    model_ft = train_model(args, dataloaders, dataset_sizes, class_to_idx, **model_dict)
 
 
 if __name__ == '__main__':

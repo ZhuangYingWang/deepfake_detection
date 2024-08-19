@@ -10,7 +10,7 @@ from utils.file_util import create_dirs
 
 
 def get_config() -> argparse.Namespace:
-    parser = configargparse.ArgumentParser(
+    parser = configargparse.ArgParser(
         description="Deepfake Detection"
     )
 
@@ -31,7 +31,7 @@ def get_config() -> argparse.Namespace:
                         help="train image resize width")
     parser.add_argument("--img_height", type=int, default=128,
                         help="train image resize height")
-    parser.add_argument("--model_name", type=str, default="efficientnet-b7",
+    parser.add_argument("--model_name", type=str, default="efficientnet-b5",
                         help="load pretrain model name")
     parser.add_argument("--init_lr", type=float, default=5e-4,
                         help="train init learning rate")

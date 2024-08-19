@@ -1,6 +1,6 @@
 import argparse
 import os
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Any
 
 from PIL import Image
 from torch.utils.data import DataLoader, Dataset
@@ -58,7 +58,8 @@ def get_train_data(args: argparse.Namespace) -> Tuple[Dict[str, DataLoader], Dic
     return dataloaders, dataset_sizes
 
 
-def get_augmentation_train_data(args: argparse.Namespace) -> Tuple[Dict[str, DataLoader], Dict[str, int]]:
+def get_augmentation_train_data(args: argparse.Namespace) -> tuple[
+    dict[str, DataLoader[Any]], dict[str, int], dict[str, Any]]:
     common_transform = transforms.Compose([
         transforms.Resize((args.img_width, args.img_height)),
         transforms.ToTensor(),
@@ -70,10 +71,10 @@ def get_augmentation_train_data(args: argparse.Namespace) -> Tuple[Dict[str, Dat
         transforms.RandomHorizontalFlip(p=0.5),
         transforms.RandomVerticalFlip(p=0.5),
         transforms.RandomRotation(degrees=180),
-        transforms.RandomCrop(256, padding=4),
-        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
-        transforms.GaussianBlur(kernel_size=(3, 3), sigma=(0.3, 0.3)),
-        transforms.RandomErasing(p=0.5, scale=(0.02, 0.2), ratio=(0.3, 3.3)),
+        # transforms.RandomCrop(256, padding=4),
+        # transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
+        # transforms.GaussianBlur(kernel_size=(3, 3), sigma=(0.3, 0.3)),
+        # transforms.RandomErasing(p=0.5, scale=(0.02, 0.2), ratio=(0.3, 3.3)),
         common_transform
     ])
 
@@ -92,6 +93,14 @@ def get_augmentation_train_data(args: argparse.Namespace) -> Tuple[Dict[str, Dat
         ),
     }
 
+    args.logger.info(f"train idx -> {image_datasets['train'].class_to_idx}")
+    args.logger.info(f"val idx -> {image_datasets['val'].class_to_idx}")
+
+    class_to_idx = {
+        'train': image_datasets['train'].class_to_idx,
+        'val': image_datasets['val'].class_to_idx
+    }
+
     dataloaders = {
         "train": DataLoader(
             image_datasets["train"], batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers
@@ -106,7 +115,7 @@ def get_augmentation_train_data(args: argparse.Namespace) -> Tuple[Dict[str, Dat
         "val": len(image_datasets["val"]),
     }
 
-    return dataloaders, dataset_sizes
+    return dataloaders, dataset_sizes, class_to_idx
 
 
 class CustomImageDataset(Dataset):

@@ -5,11 +5,11 @@ import torch
 
 from config import get_config
 from dataset import get_test_data
-from model import get_model
+from model import get_model, get_xception_model
 
 
 def test(args: argparse.Namespace):
-    model_dict = get_model(args, "weight3.0/0.5991_epoch0.pt")
+    model_dict = get_xception_model(args, "new_logs/0.8440/weight/0.8440_epoch4.pt")
     model = model_dict["model"]
 
     model.eval()
