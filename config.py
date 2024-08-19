@@ -2,17 +2,14 @@ import argparse
 import logging
 import os
 import time
+
 import configargparse
 import torch
 
+from utils.file_util import create_dirs
+
 
 def get_config() -> argparse.Namespace:
-    
-    # create logger
-    log_file_tiemstamp = time.strftime("%Y-%m-%d_%H:%M:%S",time.localtime(time.time()))
-    logging.basicConfig(filename=f"new_logs/log_{log_file_tiemstamp}.txt", level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-    logger = logging.getLogger(__name__)
-    
     parser = configargparse.ArgumentParser(
         description="Deepfake Detection"
     )
@@ -56,14 +53,23 @@ def get_config() -> argparse.Namespace:
                         help="log print step")
     parser.add_argument('--log_dir', type=str, default='new_logs',
                         help='log directory')
-    parser.add_argument('--logger', type=str, default=logger,
-                        help='log directory')
 
     args = parser.parse_args()
 
     # create log dir
-    if not os.path.exists(args.log_dir):
-        os.mkdir(args.log_dir, exist_ok=True)
+    log_file_tiemstamp = time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime(time.time()))
+    args.log_dir = os.path.join(args.log_dir, log_file_tiemstamp)
+    create_dirs(args.log_dir)
     print("Log dir: ", args.log_dir)
+
+    # create logger
+    logging.basicConfig(filename=os.path.join(args.log_dir, f"log.txt"), level=logging.INFO,
+                        format='%(asctime)s - %(levelname)s - %(message)s')
+    logger = logging.getLogger(__name__)
+    args.logger = logger
+
+    # create weight dir
+    args.weight_dir = os.path.join(args.log_dir, "weight")
+    create_dirs(args.weight_dir)
 
     return args

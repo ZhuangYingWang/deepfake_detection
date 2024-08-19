@@ -1,6 +1,7 @@
 import argparse
 import os
 from typing import Dict, Tuple
+
 from PIL import Image
 from torch.utils.data import DataLoader, Dataset
 from torchvision import datasets, transforms
@@ -69,7 +70,7 @@ def get_augmentation_train_data(args: argparse.Namespace) -> Tuple[Dict[str, Dat
         transforms.RandomHorizontalFlip(p=0.5),
         transforms.RandomVerticalFlip(p=0.5),
         transforms.RandomRotation(degrees=180),
-        transforms.RandomCrop(100, padding=4),
+        transforms.RandomCrop(256, padding=4),
         transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.1),
         transforms.GaussianBlur(kernel_size=(3, 3), sigma=(0.3, 0.3)),
         transforms.RandomErasing(p=0.5, scale=(0.02, 0.2), ratio=(0.3, 3.3)),

@@ -164,10 +164,9 @@ def train_model(args: argparse.Namespace, dataloaders, dataset_sizes, model, cri
         if val_epoch_acc > best_acc:
             best_acc = val_epoch_acc
             best_model_wts = copy.deepcopy(model.state_dict())
-            weight_dir = "weight3.0"
-            if not os.path.exists(weight_dir):
-                os.makedirs(weight_dir)
-            weight_path = os.path.join(weight_dir, f"{best_acc:.4f}_epoch{epoch}.pt")
+            if not os.path.exists(args.weight_dir):
+                os.makedirs(args.weight_dir)
+            weight_path = os.path.join(args.weight_dir, f"{best_acc:.4f}_epoch{epoch}.pt")
             logger.info(f"Save model {weight_path}")
             torch.save(model.state_dict(), weight_path)
     time_elapsed = time.time() - since
