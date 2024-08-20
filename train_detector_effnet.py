@@ -10,7 +10,7 @@ from sklearn.metrics import roc_auc_score
 
 from config import get_config
 from dataset import get_augmentation_train_data
-from model import get_xception_model
+from model import get_model
 from utils.metric_util import calculate_auc
 
 os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:50'
@@ -209,7 +209,6 @@ def train_model(args: argparse.Namespace, dataloaders, dataset_sizes, class_to_i
         val_label = np.concatenate(val_label)
         val_predict_prob = np.concatenate(val_predict_prob)
         val_auc_score = calculate_auc(val_label, val_predict_prob, val_fake_id)
-        logger.info(f"AUC -> {val_auc_score}")
         logger.info(
             "Val Loss: {:.4f} Acc: {:.4f}% Auc: {:.4f} | Fake Acc: {:4f}% | Real Acc: {:.4f}% | Use {:.2f}s".format(
                 val_epoch_loss, val_epoch_acc * 100, val_auc_score, val_predict_fake_count / val_label_fake_count * 100,
@@ -242,7 +241,7 @@ def main(args: argparse.Namespace):
     # get train data
     dataloaders, dataset_sizes, class_to_idx = get_augmentation_train_data(args)
     # get model
-    model_dict = get_xception_model(args)
+    model_dict = get_model(args)
     # train model
     model_ft = train_model(args, dataloaders, dataset_sizes, class_to_idx, **model_dict)
 

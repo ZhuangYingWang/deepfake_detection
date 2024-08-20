@@ -27,17 +27,21 @@ def get_config() -> argparse.Namespace:
                         help="cpu or cuda")
 
     # train
+    parser.add_argument("--model_name", type=str, default="xception",
+                        help="load pretrain model name")
     parser.add_argument("--img_width", type=int, default=128,
                         help="train image resize width")
     parser.add_argument("--img_height", type=int, default=128,
                         help="train image resize height")
-    parser.add_argument("--model_name", type=str, default="efficientnet-b5",
-                        help="load pretrain model name")
+    parser.add_argument("--fake_weight", type=float, default=0.3,
+                        help="loss weight for fake")
+    parser.add_argument("--real_weight", type=float, default=0.7,
+                        help="loss weight for real")
     parser.add_argument("--init_lr", type=float, default=5e-4,
                         help="train init learning rate")
     parser.add_argument("--final_lr", type=float, default=5e-5,
                         help="train final learning rate")
-    parser.add_argument("--batch_size", type=int, default="16",
+    parser.add_argument("--batch_size", type=int, default=256,
                         help="train batch size")
     parser.add_argument("--epoch", type=int, default=5,
                         help="train epoch number")
@@ -62,14 +66,18 @@ def get_config() -> argparse.Namespace:
     create_dirs(args.log_dir)
     print("Log dir: ", args.log_dir)
 
+    # create weight dir
+    args.weight_dir = os.path.join(args.log_dir, "weight")
+    create_dirs(args.weight_dir)
+
+    # log args
+    config_file_path = os.path.join(args.log_dir, "config.txt")
+    parser.write_config_file(args, [config_file_path])
+
     # create logger
     logging.basicConfig(filename=os.path.join(args.log_dir, f"log.txt"), level=logging.INFO,
                         format='%(asctime)s - %(levelname)s - %(message)s')
     logger = logging.getLogger(__name__)
     args.logger = logger
-
-    # create weight dir
-    args.weight_dir = os.path.join(args.log_dir, "weight")
-    create_dirs(args.weight_dir)
 
     return args
