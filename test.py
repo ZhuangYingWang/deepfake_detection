@@ -11,7 +11,7 @@ from model import get_model
 
 def test(args: argparse.Namespace):
     model_dict = get_model(
-        args, "new_logs/2024-08-21_00:31:21/weight/0.9649_epoch3500.pt"
+        args, "new_logs/2024-08-21_10:04:44/weight/0.9504_epoch1.pt"
     )
     model = model_dict["model"]
 
