@@ -219,12 +219,14 @@ def train_model(args: argparse.Namespace, dataloaders, dataset_sizes, class_to_i
         # Save the model if it has the best accuracy on validation set
         if val_epoch_acc > best_acc:
             best_acc = val_epoch_acc
-            best_model_wts = copy.deepcopy(model.state_dict())
-            if not os.path.exists(args.weight_dir):
-                os.makedirs(args.weight_dir)
             weight_path = os.path.join(args.weight_dir, f"{best_acc:.4f}_epoch{epoch}.pt")
             logger.info(f"Save model {weight_path}")
             torch.save(model.state_dict(), weight_path)
+        else:
+            weight_path = os.path.join(args.weight_dir, f"{best_acc:.4f}_epoch{epoch}.pt")
+            logger.info(f"Save model {weight_path}")
+            torch.save(model.state_dict(), weight_path)
+
     time_elapsed = time.time() - since
     logger.info(
         "Training complete in {:.0f}m {:.0f}s".format(
@@ -233,7 +235,6 @@ def train_model(args: argparse.Namespace, dataloaders, dataset_sizes, class_to_i
     )
     logger.info("Best val Acc: {:.4f}".format(best_acc))
 
-    model.load_state_dict(best_model_wts)
     return model
 
 

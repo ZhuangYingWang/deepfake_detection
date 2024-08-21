@@ -6,18 +6,20 @@ from tqdm import tqdm
 
 from config import get_config
 from dataset import get_test_data
-from model import get_model, get_xception_model
+from model import get_model
 
 
 def test(args: argparse.Namespace):
-    model_dict = get_xception_model(args, "new_logs/2024-08-20_02:46:33/weight/0.9261_epoch4.pt")
+    model_dict = get_model(
+        args, "new_logs/2024-08-21_00:31:21/weight/0.9649_epoch3500.pt"
+    )
     model = model_dict["model"]
 
     model.eval()
 
     test_loader, _ = get_test_data(args)
 
-    predictions = []
+    predictions = ["img_name,y_pred"]
 
     with torch.no_grad():
         for inputs, img_paths in tqdm(test_loader, desc="Processing images"):
@@ -30,13 +32,16 @@ def test(args: argparse.Namespace):
                 img_filename = os.path.basename(img_path)
                 predictions.append(f"{img_filename},{score}")
 
-    with open("new_logs/prediction.txt", "w") as f:
-        for pred in predictions:
-            f.write(pred + "\n")
+    with open("new_logs/prediction.csv", "w") as f:
+        for index, pred in enumerate(predictions):
+            if index == len(predictions) - 1:
+                f.write(pred)
+            else:
+                f.write(pred + "\n")
 
     print("Predictions have been written to prediction.txt")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     config = get_config()
     test(config)
