@@ -32,7 +32,7 @@ class FocalLoss(nn.Module):
 
         preds_softmax = preds_softmax.gather(1,labels.view(-1,1))   # 这部分实现nll_loss ( crossempty = log_softmax + nll )
         preds_logsoft = preds_logsoft.gather(1,labels.view(-1,1))
-        alpha = self.alpha.gather(0,labels.view(-1))
+        alpha = alpha.gather(0,labels.view(-1))
         loss = -torch.mul(torch.pow((1-preds_softmax), self.gamma), preds_logsoft)  # torch.pow((1-preds_softmax), self.gamma) 为focal loss中 (1-pt)**γ
 
         loss = torch.mul(alpha, loss.t())
