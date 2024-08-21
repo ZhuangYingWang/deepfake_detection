@@ -37,7 +37,7 @@ def get_model(args: argparse.Namespace, load_model_path: str = None):
 
     weight = torch.tensor([args.fake_weight, args.real_weight], dtype=torch.float32).to(args.device)
     # criterion = nn.CrossEntropyLoss(weight=weight)
-    criterion = FocalLoss(weight)
+    criterion = FocalLoss([0.4, 0.6]).to(args.device)
     optimizer_ft = torch.optim.Adam(net.parameters(), lr=args.init_lr)
     exp_lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer_ft, step_size=50, gamma=0.99)
     epoch = args.epoch
