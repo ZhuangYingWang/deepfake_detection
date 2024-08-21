@@ -9,7 +9,6 @@ from utils.loss import FocalLoss
 
 
 def get_model(args: argparse.Namespace, load_model_path: str = None):
-    args.device = "cpu"
     model_name = args.model_name
     if model_name == "xception":
         net = timm.create_model('xception', pretrained=True)
